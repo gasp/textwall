@@ -1,0 +1,19 @@
+{
+  "name": "walloftext",
+  "version": "0.0.0",
+  "description": "a wall of text",
+  "main": "app.js",
+  "scripts": {
+    "test": "test.js"
+  },
+  "author": "@gasp",
+  "license": "BSD-2-Clause",
+  "dependencies" : {
+    "ws": "*",
+	"connect": "*"
+  },
+  "devDependencies": {
+    "grunt": "*",
+    "bower": "*"
+  }
+}
