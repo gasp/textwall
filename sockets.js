@@ -10,7 +10,7 @@ var serve = function(options) {
 	var users = [];
 	var map = {
 		data:[],
-		size : {x:30,y:10},
+		size : {x:200,y:50},
 		reset : function() {
 			for (var i = 0; i < map.size.x; i++) {
 				map.data[i] = [];
@@ -101,7 +101,6 @@ var serve = function(options) {
 	}
 
 	wss.broadcast = function(data) {
-		console.log("broadcast");
 		for(var i in this.clients)
 			this.clients[i].send(JSON.stringify(data));
 	};
