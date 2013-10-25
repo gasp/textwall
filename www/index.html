@@ -1,96 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
-	<title>Socket</title>
-	
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<title>Socket</title>
+<script src="build.js"></script>
 </head>
 <body>
 	<h1>sockets</h1>
 
-<div id="status"></div>
-<div id="log"></div>
-<div>
-	<form>
-		<input id="chat">
-	</form>
-</div>
 <script>
 // let's invite Firefox to the party.
 if (window.MozWebSocket) {
 	window.WebSocket = window.MozWebSocket;
 }
 
-var state = document.getElementById("state");
 
-function openConnection() {
-	// uses global 'conn' object
-	if (conn.readyState === undefined || conn.readyState > 1) {
-		conn = new WebSocket('ws://localhost:8902');
-		conn.onopen = function () {
-			state.className = 'success';
-			state.innerHTML = 'Socket open';
-		};
-
-		conn.onmessage = function (event) {
-			// console.log(event.data);
-			var message = event.data; //JSON.parse(event.data);
-			if (!(/^\d+$/).test(message)) {
-				log.innerHTML = '<li class="them">' + message.replace(/[<>&]/g, function (m) { return entities[m]; }) + '</li>' + log.innerHTML;
-			} else {
-				connected.innerHTML = message;
-			}
-		};
-		
-		conn.onclose = function (event) {
-			state.className = 'fail';
-			state.innerHTML = 'Socket closed';
-		};
+socket = new WebSocket('ws://localhost:8902');
+socket.onmessage = function(evt){
+//	console.log("socket: on message event",evt)
+	try {
+		var data = JSON.parse(evt.data);
+	} catch(er) {
+		console.log("socket: new unparsable message: %s",evt.data)
 	}
+	
 }
 
-var connected = document.getElementById('connected'),
-		log = document.getElementById('log'),
-		chat = document.getElementById('chat'),
-		form = chat.form,
-		conn = {},
-		state = document.getElementById('status'),
-		entities = {
-			'<' : '&lt;',
-			'>' : '&gt;',
-			'&' : '&amp;'
-		};
+socket.onopen = function(ev) {
+//	console.log("socket: opened, %o ",ev);
+	console.log("socket: connected %d",ev.timeStamp);
+}
 
-window.addEventListener("load", function(){
-	if (window.WebSocket === undefined) {
-		state.innerHTML = 'Sockets not supported';
-		state.className = 'fail';
-	} else {
-		state.onclick = function () {
-			if (conn.readyState !== 1) {
-				conn.close();
-				setTimeout(function () {
-					openConnection();
-				}, 250);
-			}
-		};
-	
-		form.addEventListener('submit', function (event) {
-			event.preventDefault();
+window.setTimeout(function(){
+	socket.send( "Thank you, Mr. server!");
+},100);
 
-			// if we're connected
-			if (conn.readyState === 1) {
-				conn.send(JSON.stringify(chat.value));
-				log.innerHTML = '<li class="you">' + chat.value.replace(/[<>&]/g, function (m) { return entities[m]; }) + '</li>' + log.innerHTML;
-			
-				chat.value = '';
-			}
-		});
-
-		openConnection();	 
-	}
-})
-
+window.setTimeout(function(){
+	socket.send(JSON.stringify({json:true}));
+},200);
 
 </script>
 

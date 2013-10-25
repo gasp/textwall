@@ -12,6 +12,7 @@ var serve = function(options) {
 			console.log('received: %s', message);
 		});
 		ws.send('something');
+		ws.send(JSON.stringify({json:true}))
 	});
 }
 
