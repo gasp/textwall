@@ -4,9 +4,17 @@
 <meta http-equiv="Content-type" content="text/html; charset=utf-8">
 <title>Socket</title>
 <script src="build.js"></script>
+<style>
+body{height:100%;}
+.cursor{position:absolute;width:1em;}
+</style>
 </head>
 <body>
-	<h1>sockets</h1>
+<h1>sockets</h1>
+<p>
+	Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+</p>
+<div class="cursor" id="player_gasp">*</div>
 
 <script>
 // let's invite Firefox to the party.
@@ -27,7 +35,7 @@ var WebSocketInterface = function(url){
 
 	this.trigger = function(event_name, event_data){
 		var payload = JSON.stringify({event:event_name, data: event_data});
-		conn.send( payload ); // <= send JSON data to socket server
+		conn.send(payload); // send JSON data to socket server
 		return this;
 	};
  
@@ -35,7 +43,7 @@ var WebSocketInterface = function(url){
 	conn.onmessage = function(evt){
 		try{
 			var json = JSON.parse(evt.data);
-			dispatch(json.event, json.data)
+			dispatch(json.event, json.data);
 		}
 		catch(er) {
 			console.log("socket: unreadable message: %s",evt.data);
@@ -46,6 +54,7 @@ var WebSocketInterface = function(url){
 	conn.onopen = function(ev){dispatch('open',{timeStamp:ev.timeStamp})}
  
 	var dispatch = function(event_name, message){
+//		console.log(callbacks);
 		var chain = callbacks[event_name];
 		if(typeof chain == 'undefined') return; // no callbacks for this event
 		for(var i = 0; i < chain.length; i++){
@@ -56,28 +65,32 @@ var WebSocketInterface = function(url){
 
 socket = new WebSocketInterface('ws://localhost:8902');
 
-/*socket.on('') = function(evt){
-//	console.log("socket: on message event",evt)
-	try {
-		var data = JSON.parse(evt.data);
-	} catch(er) {
-		console.log("socket: new unparsable message: %s",evt.data)
-	}
-	
-}*/
-
 socket.on('open',function(d) {
 //	console.log("socket: opened, %o ",ev);
 	console.log("socket: connected %d", d.timeStamp);
+	socket.trigger('letter_update',{x:1,y:1,c:"¥"});
 });
 
-window.setTimeout(function(){
-	socket.trigger( "Thank you, Mr. server!");
-},100);
+socket.on('letter_update', function(data) {
+	console.log("letter_update",data);
+});
 
-window.setTimeout(function(){
-	socket.trigger({json:true});
-},200);
+$('body').mousemove(function(evt) {
+
+	socket.trigger('player_move', {
+		player_name: 'gasp',
+		x: evt.clientX,
+		y: evt.clientY
+	});
+
+
+});
+
+// Listen to other players moves and update their characters on screen.
+
+socket.on('player_move', function(move) {
+	$('#player_' + move.player_name).css( {left: move.x, top: move.y} );
+});
 
 </script>
 
