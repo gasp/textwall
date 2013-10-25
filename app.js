@@ -1,7 +1,10 @@
 // 
 //  app.js
 //  
-// 
+
+var app = {
+};
+
 var socketServer = require('./sockets.js'),
 	staticServer = require('./static.js');
 	

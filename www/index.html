@@ -2,19 +2,19 @@
 <html>
 <head>
 <meta http-equiv="Content-type" content="text/html; charset=utf-8">
-<title>Socket</title>
+<title>text only board</title>
 <script src="build.js"></script>
 <style>
-body{height:100%;}
-.cursor{position:absolute;width:1em;}
+body{height:100%;margin:0;padding:0;overflow:hidden;}
+#t{width:100%; height:10em;font-family:monospace; font-size:15pt;cursor:hand;}
+#t .l{background-color:#eee;margin:0;padding:0;}
+#t .l:hover{background-color:#ccc;}
+#t .l.user{background-color:orange;}
+#t .l.me{background-color:red;}
 </style>
 </head>
 <body>
-<h1>sockets</h1>
-<p>
-	Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-</p>
-<div class="cursor" id="player_gasp">*</div>
+<pre id="t"></pre>
 
 <script>
 // let's invite Firefox to the party.
@@ -41,13 +41,15 @@ var WebSocketInterface = function(url){
  
 	// dispatch to the right handlers
 	conn.onmessage = function(evt){
+		console.log("message",evt.data);
 		try{
 			var json = JSON.parse(evt.data);
-			dispatch(json.event, json.data);
 		}
 		catch(er) {
-			console.log("socket: unreadable message: %s",evt.data);
+			console.log("socket: unreadable message or unable to complate operation based on %s",evt.data);
+			console.log(er);
 		};
+		dispatch(json.event, json.data); // move this back into the try
 	};
  
 	conn.onclose = function(){dispatch('close',null)}
@@ -68,29 +70,197 @@ socket = new WebSocketInterface('ws://localhost:8902');
 socket.on('open',function(d) {
 //	console.log("socket: opened, %o ",ev);
 	console.log("socket: connected %d", d.timeStamp);
-	socket.trigger('letter_update',{x:1,y:1,c:"¥"});
 });
 
-socket.on('letter_update', function(data) {
-	console.log("letter_update",data);
+socket.on('key', function(key) {
+	console.log({x:key.x, y:key.y});
+	map.data[key.x][key.y] = key.k;
+	map.set({x:key.x, y:key.y}, key.k)
 });
 
-$('body').mousemove(function(evt) {
+socket.on('pos', function(pos) {
+	console.log("pos message",pos);
 
-	socket.trigger('player_move', {
-		player_name: 'gasp',
-		x: evt.clientX,
-		y: evt.clientY
+	// don't track my pos
+	if(pos.id == me.id) return false;
+
+	// search for the user
+	for (var i = users.length - 1; i >= 0; i--) {
+		if(users[i].id == pos.id){
+
+			console.log("gotcha",users[i]);
+			map.rem({x:users[i].x,y:users[i].y},'user','u'+pos.id);
+			coords = {x:pos.x,y:pos.y};
+			map.sel(coords,'user');
+			map.sel(coords,'u'+pos.id);
+			console.log(i, users[i])
+			
+			//update user
+			users[i].x = pos.x;
+			users[i].y = pos.y;
+		}
+	}
+});
+
+socket.on('welcome', function(data) {
+	window.me = data;
+	console.log('.l.x'+me.x+'.y'+me.y);
+	console.log($('.l.x'+me.x+'.y'+me.y));
+	$('.l.x'+me.x+'.y'+me.y).addClass("me");
+});
+
+socket.on('users', function(users) {
+	window.users = users;
+	for (var i = 0; i < users.length; i++) {
+		if(users[i].id != me.id){
+			coords = {
+				x : users[i].x,
+				y : users[i].y
+			}
+			map.sel(coords,'user');
+			map.sel(coords,'u'+users[i].id);
+		}
+	}
+});
+socket.on('map', function(mdata) {
+	window.map.data = mdata;
+	map.render();
+});
+
+$("#t").on("change blur keyup", function(){
+	console.log("textarea changed");
+//	socket.trigger()
+});
+
+var map = {
+	data : [], // map.data[x][y] = "a";
+	text : '', // "abc\ndef"
+	size : {x:30,y:10},
+	init : function() {
+		map.reset();
+		map.render();
+	},
+	reset : function() {
+		for (var i = 0; i < map.size.x; i++) {
+			map.data[i] = [];
+			for (var j = 0; j < map.size.y; j++) {
+				map.data[i][j] =" ";
+			};
+		};
+	},
+	draw : function() {
+		map.text = '';
+		for (var i = 0; i < map.size.x; i++) {
+			for (var j = 0; j < map.size.y; j++) {
+				map.text += "<span>"+map.data[i][j]+"</span>"
+			}
+			map.text += "\n";
+		};
+		$("#t").html(map.text);
+	},
+	render : function() {
+		$t = $("#t")
+		$t.empty();
+		for (var j = 0; j < map.size.y; j++) {
+			var div = document.createElement("div");
+			for (var i = 0; i < map.size.x; i++) {
+				var span = document.createElement("span");
+				$(span)
+					.addClass('l x'+i+' y'+j)
+					.data('x',i.toString()).data('y',j.toString())
+					.text(map.data[i][j]);
+				$(div).append(span);
+			}
+			$t.append(div);
+		}
+	},
+	set : function(coords, value) {
+		map.data[coords.x][coords.y] = value;
+		$('.l.x'+coords.x+'.y'+coords.y).text(value); // animate ?
+	},
+	sel : function(coords, cl, unique) {
+		if(typeof unique !== "undefined") $('.l.'+ cl).removeClass(cl);
+		$('.l.x'+coords.x+'.y'+coords.y).addClass(cl);
+	},
+	rem : function(coords, cl) {
+		$('.l.x'+coords.x+'.y'+coords.y).removeClass(cl);
+	}
+}
+
+var me = {},
+	users = [];
+
+$(function(){
+	var $t = $("#t");
+
+	$t.css({height:$(window).height()})
+	map.init();
+
+	$t.on('click', '.l', function(){
+		x = $(this).data('x');
+		y = $(this).data('y');
+		if(x == me.x && y == me.y)
+			console.log("nothing");
+		else{
+			me.x = x;
+			me.y = y;
+			socket.trigger("pos",{x:x,y:y});
+			map.sel({x:x,y:y},'me',true);
+		}
+	})
+
+	$(window).on('keyup keydown keypress', function(ev) {
+		// del
+		if(ev.which == 8){
+			socket.trigger("key",{x:me.x, y:me.y, k:" "});
+			map.set({x:me.x,y:me.y}," ");
+			// don't go to previous page
+			return false;
+		}
 	});
+	$(window).on('keydown', function(ev) {
+//		console.log(ev.which, ev.shiftKey, ev);
+
+		// disable preventdefault except some other key is pressed
+		if(ev.altKey == false && ev.altGraphKey == false && ev.metaKey == false 
+			&& (ev.which < 112 && ev.which > 123) ) // F1 keys
+			ev.preventDefault();
+
+		var patt =/\w/g;
+		var key = String.fromCharCode(ev.keyCode);
+		if (ev.shiftKey == false) key = key.toLowerCase();
+		
+		if (patt.test(key)){ // did I typed something ?
+			socket.trigger("key",{x:me.x, y:me.y, k:key});
+			map.set({x:me.x, y:me.y}, key);
+			me.x = me.x + 1;
+			socket.trigger("pos",{x:me.x, y:me.y});
+		}
+		else {
+			// space bar
+			if(ev.which == 32){
+				socket.trigger("key",{x:me.x, y:me.y, k:" "});
+				map.set({x:me.x,y:me.y}," ");
+			}
+			
+			if(ev.which.toString().match(/^(37|8)$/)) // left or del
+				me.x = me.x - 1;
+			if(ev.which.toString().match(/^(39|32)$/)) // right or space
+				me.x = me.x + 1;
+			if(ev.which.toString().match(/^38$/)) // up
+				me.y = me.y - 1;
+			if(ev.which.toString().match(/(40|13)/)) // down
+				me.y = me.y + 1;
+			socket.trigger("pos",{x:me.x, y:me.y});
+		}
+
+		var coords = {x:me.x,y:me.y};
+		map.sel(coords,'me',true);
+	})
+})
 
 
-});
 
-// Listen to other players moves and update their characters on screen.
-
-socket.on('player_move', function(move) {
-	$('#player_' + move.player_name).css( {left: move.x, top: move.y} );
-});
 
 </script>
 
