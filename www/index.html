@@ -14,9 +14,49 @@ if (window.MozWebSocket) {
 	window.WebSocket = window.MozWebSocket;
 }
 
+var WebSocketInterface = function(url){
+	var conn = new WebSocket(url);
+ 
+	var callbacks = {};
+ 
+	this.on = function(event_name, callback){
+		callbacks[event_name] = callbacks[event_name] || [];
+		callbacks[event_name].push(callback);
+		return this;// chainable
+	};
 
-socket = new WebSocket('ws://localhost:8902');
-socket.onmessage = function(evt){
+	this.trigger = function(event_name, event_data){
+		var payload = JSON.stringify({event:event_name, data: event_data});
+		conn.send( payload ); // <= send JSON data to socket server
+		return this;
+	};
+ 
+	// dispatch to the right handlers
+	conn.onmessage = function(evt){
+		try{
+			var json = JSON.parse(evt.data);
+			dispatch(json.event, json.data)
+		}
+		catch(er) {
+			console.log("socket: unreadable message: %s",evt.data);
+		};
+	};
+ 
+	conn.onclose = function(){dispatch('close',null)}
+	conn.onopen = function(ev){dispatch('open',{timeStamp:ev.timeStamp})}
+ 
+	var dispatch = function(event_name, message){
+		var chain = callbacks[event_name];
+		if(typeof chain == 'undefined') return; // no callbacks for this event
+		for(var i = 0; i < chain.length; i++){
+			chain[i]( message )
+		}
+	}
+};
+
+socket = new WebSocketInterface('ws://localhost:8902');
+
+/*socket.on('') = function(evt){
 //	console.log("socket: on message event",evt)
 	try {
 		var data = JSON.parse(evt.data);
@@ -24,19 +64,19 @@ socket.onmessage = function(evt){
 		console.log("socket: new unparsable message: %s",evt.data)
 	}
 	
-}
+}*/
 
-socket.onopen = function(ev) {
+socket.on('open',function(d) {
 //	console.log("socket: opened, %o ",ev);
-	console.log("socket: connected %d",ev.timeStamp);
-}
+	console.log("socket: connected %d", d.timeStamp);
+});
 
 window.setTimeout(function(){
-	socket.send( "Thank you, Mr. server!");
+	socket.trigger( "Thank you, Mr. server!");
 },100);
 
 window.setTimeout(function(){
-	socket.send(JSON.stringify({json:true}));
+	socket.trigger({json:true});
 },200);
 
 </script>
