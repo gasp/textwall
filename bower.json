@@ -1,0 +1,12 @@
+{
+  "name": "walloftext",
+  "version": "0.0.0",
+  "main": "www/main.css",
+  "ignore": [
+    ".jshintrc",
+    "**/*.txt"
+  ],
+  "dependencies": {
+    "zepto": "*"
+  }
+}

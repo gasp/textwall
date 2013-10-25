@@ -1,3 +1,7 @@
+// 
+//  app.js
+//  
+// 
 var socketServer = require('./sockets.js'),
 	staticServer = require('./static.js');
 	
