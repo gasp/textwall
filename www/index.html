@@ -36,8 +36,13 @@ var me = {},
 
 
 $(function(){
-	map.init();
-	app.init();
+	if("WebSocket" in window) {
+		map.init();
+		app.init();
+	}
+	else {
+		$("#t").text("\n    Your browser does not support WebSockets\n    You should consider a browser that support them\n    please check http://caniuse.com/websockets")
+	}
 });
 
 
