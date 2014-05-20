@@ -1,10 +1,12 @@
 var app = {
 	socket : null,
+	url: 'ws://localhost:8902',
 	$t : null,
 	init: function(){
+
 		app.$t = $("#t");
 		app.$t.css({height:$(window).height()})
-		
+		app.url = 'ws://'+window.location.hostname+':8902'
 		app.connect();
 		app.listen.sockets();
 		app.listen.clicks();
@@ -14,7 +16,7 @@ var app = {
 };
 
 app.connect = function(){
-	app.socket = new WebSocketInterface('ws://localhost:8902');
+	app.socket = new WebSocketInterface(app.url);
 };
 app.listen = {
 	sockets: function(){
