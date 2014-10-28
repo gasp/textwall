@@ -10,25 +10,52 @@ var serve = function(options) {
 
 	var users = [];
 	var map = {
-		data:[],
+		data:[], // {x:10,y:10,v:"a"}
 		size : {x:20,y:10}, // x are cols y are lines
 		reset : function() {
 			for (var i = 0; i < map.size.x; i++) {
-				map.data[i] = [];
 				for (var j = 0; j < map.size.y; j++) {
-					map.data[i][j] = " ";
+					map.data.push({x:i,y:j,v:" "});
 				};
 			};
 			var l = Math.min(welcome.length, map.data.length);
 			for (var i = 0; i < l ; i++) {
-				map.data[i][5] = welcome[i];
+				map.set(i,5,welcome[i]);
 			};
+		},
+		set: function (x,y,v) {
+			var i = map.find(x,y)
+			if(i === null) map.data.push({x:x,y:y,v:v});
+			else map.data[i].v = v;
+		},
+		get: function (x,y) {
+			var i = map.find(x,y);
+			if(i === null) return '•';
+			else return map.data[i].v;
+		},
+		find: function (x,y) {
+			for (var i = map.data.length - 1; i >= 0; i--) {
+				if(map.data[i].x === x && map.data[i].y === y) {
+					return i;
+				}
+			}
+			return null;
+		},
+		box: function(minx, maxx, miny, maxy) {
+			var results = []
+			for (var i = map.data.length - 1; i >= 0; i--) {
+				if( map.data[i].x < maxx && map.data[i].x > minx
+					&& map.data[i].y < maxy && map.data[i].y > miny) {
+					results.push(i);
+				}
+			}
+			return results;
 		},
 		ascii : function () {
 			var text = '';
 			for (var j = 0; j < map.size.y; j++) {
 				for (var i = 0; i < map.size.x; i++) {
-					var c = map.data[i][j];
+					var c = map.get(i,j);
 					text += (c === ' ' || c === undefined) ? '.' : c;
 				}
 				text += "\n";
@@ -59,24 +86,20 @@ var serve = function(options) {
 		wss.wall.users()
 
 		// welcome with my infos
-		var wjson = {event:"welcome", data:me};
+		var wjson = {event: "welcome", data: me};
 		ws.send(JSON.stringify(wjson));
-
-		// send the map
-		var mjson = {event:"map", data:map.data};
-		wss.broadcast(mjson);
 
 		ws.on('message', function(message) {
 			console.log('received: %s', message);
 			try{
 				var json = JSON.parse(message);
-				parse(json);
-				ws.send(message);
 			}
 			catch(er) {
 				console.log("error reading message "+ message);
 				console.log(er);
 			};
+			parse(json);
+			ws.send(message);
 		});
 
 		var parse = function(command){
@@ -95,7 +118,7 @@ var serve = function(options) {
 			}
 			if(command.event == "key") {
 				// update data
-				map.data[command.data.x][command.data.y] = [command.data.k]
+				map.set(command.data.x, command.data.y, command.data.k);
 
 				// telling everyone
 				wss.wall.key(command.data)
@@ -114,11 +137,6 @@ var serve = function(options) {
 		},
 		key: function(kdata) {
 			var json = {event:"key", data:kdata};
-			wss.broadcast(json);
-		},
-		// should not be used...
-		map: function(mdata) {
-			var json = {event:"pos", data:mdata};
 			wss.broadcast(json);
 		}
 	}
