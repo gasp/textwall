@@ -38,9 +38,6 @@ var map = {
 				map.data[i][j] =" ";
 			};
 		};
-		for (var i = 0; i < "empty map".length; i++) {
-			map.data[i + 3][5] = "empty map"[i];
-		};
 	},
 	// flat draw on a pre
 	draw : function() {
