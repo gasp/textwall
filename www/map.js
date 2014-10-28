@@ -1,20 +1,36 @@
 var map = {
-	data : [], // map.data[x][y] = "a";
+	data : [], // map.data[{x:0,y:0,v:"a"}]
 	text : '', // "abc\ndef"
-	size : {x:10,y:20},
+	size : {x:20,y:20},
+	orig : {x:0,y:0},
+	unit : {},
 	init : function() {
+
+		// get a text block size
+		var $span = $("<span>").addClass("l").text("?");
+		$("#t").html($span);
+		map.unit = {
+			width: $span.width(),
+			height: $span.height()
+		};
+		$span.remove();
+
+		// setting the number of visible blocks
+		map.size = {
+			x: Math.ceil($(window).width() / map.unit.width),
+			y: Math.ceil($(window).height() / map.unit.height) -1 // because there is a top bar
+		};
+
 		map.reset();
 		map.render();
+
 	},
 	import: function(mdata) {
-		map.data = mdata;
-		map.size.x = mdata.length;
-		var maxy = 0;
-		for (var i = map.size.x - 1; i >= 0; i--) {
-			maxy = Math.max(mdata[i].length, maxy);
+		for (var i = mdata.length - 1; i >= 0; i--) {
+			map.data[mdata[i].x][mdata[i].y] = mdata[i].v;
 		}
-		map.size.y = maxy;
 	},
+	// make an empty map
 	reset : function() {
 		for (var i = 0; i < map.size.x; i++) {
 			map.data[i] = [];
@@ -22,11 +38,15 @@ var map = {
 				map.data[i][j] =" ";
 			};
 		};
+		for (var i = 0; i < "empty map".length; i++) {
+			map.data[i + 3][5] = "empty map"[i];
+		};
 	},
+	// flat draw on a pre
 	draw : function() {
 		map.text = '';
-		for (var i = 0; i < map.size.x; i++) {
-			for (var j = 0; j < map.size.y; j++) {
+		for (var j = 0; j < map.size.y; j++) {
+			for (var i = 0; i < map.size.x; i++) {
 				map.text += "<span>"+map.data[i][j]+"</span>"
 			}
 			map.text += "\n";
@@ -50,13 +70,16 @@ var map = {
 		}
 	},
 	set : function(coords, value) {
+		if(map.data[coords.x] === undefined) map.data[coords.x] = []
 		map.data[coords.x][coords.y] = value;
 		$('.l.x'+coords.x+'.y'+coords.y).text(value); // animate ?
 	},
+	// select
 	sel : function(coords, cl, unique) {
 		if(typeof unique !== "undefined") $('.l.'+ cl).removeClass(cl);
 		$('.l.x'+coords.x+'.y'+coords.y).addClass(cl);
 	},
+	// remove select
 	rem : function(coords, cl) {
 		$('.l.x'+coords.x+'.y'+coords.y).removeClass(cl);
 	}
