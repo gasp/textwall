@@ -9,12 +9,12 @@
   "author": "@gasp",
   "license": "BSD-2-Clause",
   "dependencies" : {
-    "ws": "*",
-	"connect": "*"
+    "ws": "latest",
+    "connect": "latest"
   },
   "devDependencies": {
-    "grunt": "*",
-    "grunt-contrib-uglify": "*",
-    "bower": "*"
+    "grunt": "latest",
+    "grunt-contrib-uglify": "latest",
+    "bower": "latest"
   }
 }
