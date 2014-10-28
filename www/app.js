@@ -5,24 +5,31 @@ var app = {
 	init: function(){
 
 		app.$t = $("#t");
-		app.$t.css({height:$(window).height()})
+		app.$t.css({height:$(window).height()} -  map.unit.height)
 		app.url = 'ws://'+window.location.hostname+':8902'
 		app.connect();
 		app.listen.sockets();
 		app.listen.clicks();
 		app.listen.keys();
-
 	}
 };
 
 app.connect = function(){
 	app.socket = new WebSocketInterface(app.url);
 };
+app.refresh = function(){
+	// ask for map data
+	app.socket.trigger("map",{
+		minx: map.orig.x,
+		maxx: map.orig.x + map.size.x,
+		miny: map.orig.y,
+		maxy: map.orig.y + map.size.y,
+	});
+};
 app.listen = {
 	sockets: function(){
 	
 		// listen to sockets
-		
 		app.socket.on('open',function(d) {
 			$("#bar")
 			.addClass('open').removeClass('close')
@@ -33,18 +40,13 @@ app.listen = {
 				.addClass('close').removeClass('open')
 				.find('.status').text('disconneced');
 
-			console.log("restarting app.socket");
+			console.log("todo: restarting app.socket, app.listen.sockets may not be reinitialized properly");
 
 			window.setTimeout(function(){
 				$("#bar").find('.status').text('reconnecting');
-			})
-			window.setTimeout(function(){
-				
 				app.socket = null;
 				app.connect();
 			}, 5000)
-
-		
 		});
 	
 		app.socket.on('welcome', function(data) {
@@ -52,13 +54,16 @@ app.listen = {
 			console.log('.l.x'+me.x+'.y'+me.y);
 			console.log($('.l.x'+me.x+'.y'+me.y));
 			$('.l.x'+me.x+'.y'+me.y).addClass("me");
+			// time to refresh
+			app.refresh();
 		});
 	
 		app.socket.on('users', function(users) {
 			window.users = users;
 			for (var i = 0; i < users.length; i++) {
-				if(users[i].id != me.id){
+				if(users[i].id !== me.id){
 					coords = {
+						id: users[i].id,
 						x : users[i].x,
 						y : users[i].y
 					}
@@ -68,6 +73,7 @@ app.listen = {
 			}
 		});
 		app.socket.on('map', function(mdata) {
+			console.log("just got new map data from server");
 			map.import(mdata);
 			map.render();
 		});
