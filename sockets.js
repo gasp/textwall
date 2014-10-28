@@ -53,6 +53,7 @@ var serve = function(options) {
 				console.error(er);
 			};
 			parse(json);
+			// TODO remove this echo ?
 			client.send(message);
 		});
 
@@ -77,8 +78,13 @@ var serve = function(options) {
 				wss.wall.key(command.data)
 			}
 			if(command.event == "map") {
-				console.log("implement map command");
-
+				// send needed data to the client
+				var iter = map.box(command.data.minx, command.data.maxx, command.data.miny, command.data.maxy),
+					mdata = [];
+				for (var i = iter.length - 1; i >= 0; i--) {
+					mdata.push(map.data[iter[i]]);
+				}
+				client.send(JSON.stringify({event:"map", data: mdata}));
 			}
 		};
 	});
