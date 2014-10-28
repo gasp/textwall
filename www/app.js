@@ -130,21 +130,27 @@ app.listen = {
 				app.socket.trigger("pos",{x:me.x, y:me.y});
 			}
 			else {
-				// space bar
-				if(ev.which == 32){
-					app.socket.trigger("key",{x:me.x, y:me.y, k:" "});
-					map.set({x:me.x,y:me.y}," ");
+				// any directions
+				if(ev.which.toString().match(/(8|32|37|38|39|40)/)) {
+
+					// space bar
+					if(ev.which == 32){
+						app.socket.trigger("key",{x:me.x, y:me.y, k:" "});
+						map.set({x:me.x,y:me.y}," ");
+					}
+					if(ev.which.toString().match(/^(37|8)$/)) // left or del
+						me.x = me.x - 1;
+					if(ev.which.toString().match(/^(39|32)$/)) // right or space
+						me.x = me.x + 1;
+					if(ev.which.toString().match(/^38$/)) // up
+						me.y = me.y - 1;
+					if(ev.which.toString().match(/(40|13)/)) // down
+						me.y = me.y + 1;
+
+					console.log('todo: check if i am near a wall, then change orig and call app.refresh');
+					ev.preventDefault();
+					app.socket.trigger("pos",{x:me.x, y:me.y});
 				}
-			
-				if(ev.which.toString().match(/^(37|8)$/)) // left or del
-					me.x = me.x - 1;
-				if(ev.which.toString().match(/^(39|32)$/)) // right or space
-					me.x = me.x + 1;
-				if(ev.which.toString().match(/^38$/)) // up
-					me.y = me.y - 1;
-				if(ev.which.toString().match(/(40|13)/)) // down
-					me.y = me.y + 1;
-				app.socket.trigger("pos",{x:me.x, y:me.y});
 			}
 
 			var coords = {x:me.x,y:me.y};
@@ -165,6 +171,5 @@ app.listen = {
 			}
 		});
 	}
-	
-	
 };
+
