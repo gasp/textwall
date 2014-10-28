@@ -1,6 +1,6 @@
 {
   "name": "textwall",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A wall of text using websockets",
   "main": "app.js",
   "scripts": {

@@ -22,7 +22,7 @@ var WebSocketInterface = function(url){
  
 	// dispatch to the right handlers
 	conn.onmessage = function(evt){
-		console.log("message",evt.data);
+		console.log("socket: message",evt.data);
 		try{
 			var json = JSON.parse(evt.data);
 		}
