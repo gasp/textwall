@@ -4,18 +4,19 @@ var WebSocketServer = require('ws').Server;
 
 var serve = function(options) {
 	var port = options.port || 9802;
+	var welcome = options.welcome || "hello world !     welcome all."
 	var wss = new WebSocketServer({port: port});
 	console.log('serving socket on http://localhost:'+port)
 
 	var users = [];
 	var map = {
 		data:[],
-		size : {x:200,y:50},
+		size : {x:20,y:10}, // x are cols y are lines
 		reset : function() {
 			for (var i = 0; i < map.size.x; i++) {
 				map.data[i] = [];
 				for (var j = 0; j < map.size.y; j++) {
-					map.data[i][j] =" ";
+					map.data[i][j] = " ";
 				};
 			};
 		}

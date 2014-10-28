@@ -1,7 +1,7 @@
 var map = {
 	data : [], // map.data[x][y] = "a";
 	text : '', // "abc\ndef"
-	size : {x:30,y:20},
+	size : {x:10,y:20},
 	init : function() {
 		map.reset();
 		map.render();
