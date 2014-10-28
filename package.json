@@ -10,7 +10,7 @@
   "license": "BSD-2-Clause",
   "dependencies" : {
     "ws": "latest",
-    "connect": "latest"
+    "connect": "2.x.x"
   },
   "devDependencies": {
     "grunt": "latest",
