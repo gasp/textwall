@@ -19,11 +19,33 @@ var serve = function(options) {
 					map.data[i][j] = " ";
 				};
 			};
+			var l = Math.min(welcome.length, map.data.length);
+			for (var i = 0; i < l ; i++) {
+				map.data[i][5] = welcome[i];
+			};
+		},
+		ascii : function () {
+			var text = '';
+			for (var j = 0; j < map.size.y; j++) {
+				for (var i = 0; i < map.size.x; i++) {
+					var c = map.data[i][j];
+					text += (c === ' ' || c === undefined) ? '.' : c;
+				}
+				text += "\n";
+			}
+			return text;
 		}
 	};
+
 	map.reset();
+	console.log(map.ascii());
+
 
 	wss.on('connection', function(ws) {
+
+		wss.on('close', function(ws) {
+			console.log('disconnected', this, ws);
+		});
 
 		var me = {
 			id: Math.floor(Math.random()*100000),
