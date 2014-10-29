@@ -2,15 +2,23 @@ var app = {
 	socket : null,
 	url: 'ws://localhost:8902',
 	$t : null,
+	$input: null,
 	init: function(){
 
 		app.$t = $("#t");
+		app.$input = $("#sampler");
 		app.$t.css({height:$(window).height()} -  map.unit.height)
 		app.url = 'ws://'+window.location.hostname+':8902'
 		app.connect();
 		app.listen.sockets();
 		app.listen.clicks();
 		app.listen.keys();
+		app.$input.focus().on("blur change", function () {
+			$(this).focus();
+			setTimeout(function () {
+				app.$input.focus();
+			}, 1);
+		});
 	}
 };
 
@@ -28,7 +36,6 @@ app.refresh = function(){
 };
 app.listen = {
 	sockets: function(){
-	
 		// listen to sockets
 		app.socket.on('open',function(d) {
 			$("#bar")
@@ -79,13 +86,13 @@ app.listen = {
 		});
 
 		app.socket.on('key', function(key) {
-			console.log({x:key.x, y:key.y});
+			// console.log({x:key.x, y:key.y});
 			map.data[key.x][key.y] = key.k;
 			map.set({x:key.x, y:key.y}, key.k)
 		});
 
 		app.socket.on('pos', function(pos) {
-			console.log("pos message",pos);
+			// console.log("pos message",pos);
 	
 			// don't track my pos
 			if(pos.id == me.id) return false;
@@ -93,14 +100,10 @@ app.listen = {
 			// search for the user
 			for (var i = users.length - 1; i >= 0; i--) {
 				if(users[i].id == pos.id){
-
-					console.log("gotcha",users[i]);
 					map.rem({x:users[i].x,y:users[i].y},'user','u'+pos.id);
 					coords = {x:pos.x,y:pos.y};
 					map.sel(coords,'user');
 					map.sel(coords,'u'+pos.id);
-					console.log(i, users[i])
-				
 					//update user
 					users[i].x = pos.x;
 					users[i].y = pos.y;
@@ -109,7 +112,7 @@ app.listen = {
 		});
 	}, ///sockets
 	keys: function(){
-		$(window).on('keyup keydown keypress', function(ev) {
+		app.$input.on('keyup keydown keypress', function(ev) {
 			// del
 			if(ev.which == 8){
 				app.socket.trigger("key",{x:me.x, y:me.y, k:" "});
@@ -118,49 +121,53 @@ app.listen = {
 				return false;
 			}
 		});
-		$(window).on('keydown', function(ev) {
 
-			// disable preventdefault except some other key is pressed
-			if(ev.altKey == false && ev.altGraphKey == false && ev.metaKey == false 
-				&& (ev.which < 112 && ev.which > 123) ) // F1 keys
-				ev.preventDefault();
+		app.$input.on('input', function() {
+			var key = $("#sampler").val();
+			$("#sampler").val('');
+			if(key.length > 1) {
+				key = key[0];
+			}
 
-			var patt =/\w/g;
-			var key = String.fromCharCode(ev.keyCode);
-			if (ev.shiftKey == false) key = key.toLowerCase();
-		
-			if (patt.test(key)){ // did I typed something ?
+			// can be resticted with
+			// var patt =/(\w|'|"|\||\\|\/|\.|;|,|:|•|-|\+|á|à|â|ë|ç|é|è|ê|ë|í|ì|î|ï|ó|ò|ô|ö|ú|ù|û|ü|\?|\!|§|\@|\&|\$|\*|\(|\)|\~|\<|\>|\%|\[|\]|\{|\}|\^|\#|\=)/g;
+			// if (patt.test(key))
+
+			if (key.length){ // did I typed something ?
 				app.socket.trigger("key",{x:me.x, y:me.y, k:key});
 				map.set({x:me.x, y:me.y}, key);
 				me.x = me.x + 1;
 				app.socket.trigger("pos",{x:me.x, y:me.y});
 			}
-			else {
-				// any directions
-				if(ev.which.toString().match(/(8|32|37|38|39|40)/)) {
+			var coords = {x:me.x, y:me.y};
+			map.sel(coords, 'me', true);
+			app.socket.trigger("pos",coords);
+		});
 
-					// space bar
-					if(ev.which == 32){
-						app.socket.trigger("key",{x:me.x, y:me.y, k:" "});
-						map.set({x:me.x,y:me.y}," ");
-					}
-					if(ev.which.toString().match(/^(37|8)$/)) // left or del
-						me.x = me.x - 1;
-					if(ev.which.toString().match(/^(39|32)$/)) // right or space
-						me.x = me.x + 1;
-					if(ev.which.toString().match(/^38$/)) // up
-						me.y = me.y - 1;
-					if(ev.which.toString().match(/(40|13)/)) // down
-						me.y = me.y + 1;
+		// any directions
+		app.$input.on('keydown', function(ev) {
+			if(ev.which.toString().match(/^(8|32|37|38|39|40)$/)) {
 
-					console.log('todo: check if i am near a wall, then change orig and call app.refresh');
-					ev.preventDefault();
-					app.socket.trigger("pos",{x:me.x, y:me.y});
+				// space bar
+				if(ev.which == 32){
+					app.socket.trigger("key",{x:me.x, y:me.y, k:" "});
+					map.set({x:me.x,y:me.y}," ");
 				}
-			}
+				if(ev.which.toString().match(/^(37|8)$/)) // left or del
+					me.x = me.x - 1;
+				if(ev.which.toString().match(/^(39|32)$/)) // right or space
+					me.x = me.x + 1;
+				if(ev.which.toString().match(/^38$/)) // up
+					me.y = me.y - 1;
+				if(ev.which.toString().match(/(40|13)/)) // down
+					me.y = me.y + 1;
 
-			var coords = {x:me.x,y:me.y};
-			map.sel(coords,'me',true);
+				console.log('todo: check if i am near a wall, then change orig and call app.refresh');
+				ev.preventDefault();
+				var coords = {x:me.x, y:me.y};
+				map.sel(coords, 'me', true);
+				app.socket.trigger("pos",coords);
+			}
 		});
 	},
 	clicks: function () {
