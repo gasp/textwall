@@ -8,9 +8,10 @@
   },
   "author": "@gasp",
   "license": "BSD-2-Clause",
-  "dependencies" : {
-    "ws": "latest",
-    "connect": "2.x.x"
+  "dependencies": {
+    "connect": "*",
+    "serve-static": "^1.10.0",
+    "ws": "*"
   },
   "devDependencies": {
     "grunt": "latest",
